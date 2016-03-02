@@ -212,18 +212,7 @@ static BOOL _alwaysUseMainBundle = NO;
 		return YES;
 	
 	NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
-	
-	NSDate *dateOfFirstLaunch = [NSDate dateWithTimeIntervalSince1970:[userDefaults doubleForKey:kAppiraterFirstUseDate]];
-	NSTimeInterval timeSinceFirstLaunch = [[NSDate date] timeIntervalSinceDate:dateOfFirstLaunch];
-	NSTimeInterval timeUntilRate = 60 * 60 * 24 * _daysUntilPrompt;
-	if (timeSinceFirstLaunch < timeUntilRate)
-		return NO;
-	
-	// check if the app has been used enough
-	int useCount = [userDefaults integerForKey:kAppiraterUseCount];
-	if (useCount <= _usesUntilPrompt)
-		return NO;
-	
+		
 	// check if the user has done enough significant events
 	int sigEventCount = [userDefaults integerForKey:kAppiraterSignificantEventCount];
 	if (sigEventCount <= _significantEventsUntilPrompt)
@@ -243,8 +232,18 @@ static BOOL _alwaysUseMainBundle = NO;
 	NSTimeInterval timeUntilReminder = 60 * 60 * 24 * _timeBeforeReminding;
 	if (timeSinceReminderRequest < timeUntilReminder)
 		return NO;
-	
-	return YES;
+    
+    
+    NSDate *dateOfFirstLaunch = [NSDate dateWithTimeIntervalSince1970:[userDefaults doubleForKey:kAppiraterFirstUseDate]];
+    NSTimeInterval timeSinceFirstLaunch = [[NSDate date] timeIntervalSinceDate:dateOfFirstLaunch];
+    NSTimeInterval timeUntilRate = 60 * 60 * 24 * _daysUntilPrompt;
+
+    // check if the app has been used enough
+    int useCount = [userDefaults integerForKey:kAppiraterUseCount];
+    if (!(timeSinceFirstLaunch < timeUntilRate) || !(useCount <= _usesUntilPrompt))
+        return YES;
+    else
+        return NO;
 }
 
 - (void)incrementUseCount {
