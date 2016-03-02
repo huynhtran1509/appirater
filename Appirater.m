@@ -240,7 +240,7 @@ static BOOL _alwaysUseMainBundle = NO;
 
     // check if the app has been used enough
     int useCount = [userDefaults integerForKey:kAppiraterUseCount];
-    return (!(timeSinceFirstLaunch < timeUntilRate) || !(useCount <= _usesUntilPrompt))
+    return (!(timeSinceFirstLaunch < timeUntilRate) || !(useCount <= _usesUntilPrompt));
 }
 
 - (void)incrementUseCount {
