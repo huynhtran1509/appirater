@@ -208,40 +208,45 @@ static BOOL _alwaysUseMainBundle = NO;
 }
 
 - (BOOL)ratingConditionsHaveBeenMet {
-	if (_debug)
-		return YES;
-	
-	NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
-		
-	// check if the user has done enough significant events
-	int sigEventCount = [userDefaults integerForKey:kAppiraterSignificantEventCount];
-	if (sigEventCount <= _significantEventsUntilPrompt)
-		return NO;
-	
-	// has the user previously declined to rate this version of the app?
-	if ([userDefaults boolForKey:kAppiraterDeclinedToRate])
-		return NO;
-	
-	// has the user already rated the app?
-	if ([self userHasRatedCurrentVersion])
-		return NO;
-	
-	// if the user wanted to be reminded later, has enough time passed?
-	NSDate *reminderRequestDate = [NSDate dateWithTimeIntervalSince1970:[userDefaults doubleForKey:kAppiraterReminderRequestDate]];
-	NSTimeInterval timeSinceReminderRequest = [[NSDate date] timeIntervalSinceDate:reminderRequestDate];
-	NSTimeInterval timeUntilReminder = 60 * 60 * 24 * _timeBeforeReminding;
-	if (timeSinceReminderRequest < timeUntilReminder)
-		return NO;
+    if (_debug)
+        return YES;
     
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
     
+    // check if the user has done enough significant events
+    int sigEventCount = [userDefaults integerForKey:kAppiraterSignificantEventCount];
+    if (sigEventCount <= _significantEventsUntilPrompt)
+        return NO;
+    
+    // has the user previously declined to rate this version of the app?
+    if ([userDefaults boolForKey:kAppiraterDeclinedToRate])
+        return NO;
+    
+    // has the user already rated the app?
+    if ([self userHasRatedCurrentVersion])
+        return NO;
+    
+    NSDate *reminderRequestDate = [NSDate dateWithTimeIntervalSince1970:[userDefaults doubleForKey:kAppiraterReminderRequestDate]];
     NSDate *dateOfFirstLaunch = [NSDate dateWithTimeIntervalSince1970:[userDefaults doubleForKey:kAppiraterFirstUseDate]];
-    NSTimeInterval timeSinceFirstLaunch = [[NSDate date] timeIntervalSinceDate:dateOfFirstLaunch];
+    
+    // if the user wanted to be reminded later set the first launch to reminderDate
+    NSTimeInterval timeSinceFirstLaunch;
+    if ([userDefaults doubleForKey:kAppiraterReminderRequestDate])
+    {
+        timeSinceFirstLaunch = [[NSDate date] timeIntervalSinceDate:reminderRequestDate];
+    }
+    else
+    {
+        timeSinceFirstLaunch = [[NSDate date] timeIntervalSinceDate:dateOfFirstLaunch];
+    }
     NSTimeInterval timeUntilRate = 60 * 60 * 24 * _daysUntilPrompt;
-
+    
     // check if the app has been used enough
     int useCount = [userDefaults integerForKey:kAppiraterUseCount];
-    return (!(timeSinceFirstLaunch < timeUntilRate) || !(useCount <= _usesUntilPrompt));
+    
+    return (timeSinceFirstLaunch > timeUntilRate || useCount >= _usesUntilPrompt);
 }
+
 
 - (void)incrementUseCount {
 	// get the app's version
@@ -530,6 +535,8 @@ static BOOL _alwaysUseMainBundle = NO;
 		}
 		case 2:
 			// remind them later
+            //reset the use count
+            [userDefaults setInteger:0 forKey:kAppiraterUseCount];
 			[userDefaults setDouble:[[NSDate date] timeIntervalSince1970] forKey:kAppiraterReminderRequestDate];
 			[userDefaults synchronize];
 			if(delegate && [delegate respondsToSelector:@selector(appiraterDidOptToRemindLater:)]){
